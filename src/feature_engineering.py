@@ -80,7 +80,6 @@ def add_features(data,window_rolling_vol=20, window_momentum= 20,period=14,windo
     data=compute_rsi(data,period)
     data=compute_volume_standardized(data,window_volume_std)
     data=compute_vix_vol_ratio(data)
-
     data.dropna(inplace=True)
     return data
 

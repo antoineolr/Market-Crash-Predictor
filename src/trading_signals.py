@@ -55,7 +55,75 @@ def count_transactions(signals):
             ###count+=1
     return count
 
-def backtest_threshold(probabilities, data, thresholds):
+def backtest_threshold(data, probabilities, thresholds,tax,portfolio_init):
+    market_returns=data['Log_Return']
+    market_returns=market_returns.to_numpy()
+
+    sharpe_ratios=[]
+    cumuls=[]
+    n_transactions=[]
+    drawdowns=[]
+
+    for threshold in thresholds:        
+        signals=generate_signals(probabilities,threshold)
+
+        n_transactions.append(count_transactions(signals))
+
+        strategy_returns=np.zeros(len(signals))
+        strategy_returns[0]=0
+
+        strategy_returns_net = np.zeros(len(signals))
+        strategy_returns_net[0]=0
+
+        transition_cost=np.zeros(len(signals))
+        transition_cost[0]=0
+        
+        portfolio_value=np.zeros(len(signals))
+        portfolio_value[0]=portfolio_init
+
+        for i in range(1,len(signals)):
+            if signals[i]=="BUY" or signals[i]=="HOLD":
+                strategy_returns[i]=market_returns[i]
+            
+            if signals[i] != signals[i-1]:
+                transition_cost[i] = portfolio_value[i-1] * tax
+            else:
+                transition_cost[i] = 0
+            
+            portfolio_value[i]=portfolio_value[i-1] * (1+strategy_returns[i]) - transition_cost[i]
+            strategy_returns_net[i]=(portfolio_value[i] - portfolio_value[i-1])/portfolio_value[i-1]
+                  
+        strategy_returns=np.array(strategy_returns)
+
+
+        cumul=np.cumprod(strategy_returns_net+1) - 1
+        
+        running_max=np.maximum.accumulate(portfolio_value)
+        drawdown=(portfolio_value - running_max)/running_max
+        max_drawdown=np.min(drawdown)
+        drawdowns.append(max_drawdown)
+        
+        if np.std(strategy_returns_net)==0:
+            sharpe_ratio=np.nan
+        else:
+            sharpe_ratio=np.mean(strategy_returns_net)/np.std(strategy_returns_net) * np.sqrt(252)
+        
+        cumuls.append(cumul[-1])
+        sharpe_ratios.append(sharpe_ratio)
+    
+    df=pd.DataFrame(index=thresholds)
+    df['Sharpe_Ratio']=pd.Series(sharpe_ratios)
+    df['Total_Returns']=pd.Series(cumuls)
+    df['N_Transaction']=pd.Series(n_transactions)
+    df['Max_Drawdown']=pd.Series(drawdowns)
+
+
+    optimal_threshold=df['Sharpe_Ratio'].idxmax()
+    return optimal_threshold
+
+
+
+
 
 
 

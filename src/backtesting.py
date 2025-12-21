@@ -25,7 +25,7 @@ def backtest_buy_and_hold(data, initial_capital):
     returns=data['Log_Return']
     portfolio_value=calculate_portfolio_value(returns,initial_capital)
     metrics=calculate_metrics(returns,portfolio_value,0.02)
-    return metrics
+    return metrics, portfolio_value
 
 def backtest_hmm_strategy(data, signals, tax, initial_capital):
     """signal est composé de HOLD, BUY et SELL"""
@@ -57,7 +57,7 @@ def backtest_hmm_strategy(data, signals, tax, initial_capital):
         strategy_returns_net[i]=(portfolio_value[i] - portfolio_value[i-1])/portfolio_value[i-1]
 
     metrics=calculate_metrics(strategy_returns_net,portfolio_value,0.02)
-    return metrics 
+    return metrics, portfolio_value
 
 def compare_strategies(results_bh, results_hmm):
     df=pd.DataFrame(index=['total_return','annual_return','annual_volatility','sharpe','max_drawdown'])

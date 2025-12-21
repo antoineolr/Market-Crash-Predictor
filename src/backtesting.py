@@ -60,4 +60,15 @@ def backtest_hmm_strategy(data, signals, tax, initial_capital):
     return metrics 
 
 def compare_strategies(results_bh, results_hmm):
-    
+    df=pd.DataFrame(index=['total_return','annual_return','annual_volatility','sharpe','max_drawdown'])
+    df['Buy & Hold']=pd.Series(results_bh)
+    df['HMM']=pd.Series(results_hmm)
+    df['Difference']=df['HMM'] - df['Buy & Hold']
+    d1=(results_hmm['total_return']-results_bh['total_return'])/results_bh['total_return'] * 100
+    d2=(results_hmm['annual_return']-results_bh['annual_return'])/results_bh['annual_return'] * 100
+    d3= - (results_hmm['annual_volatility']-results_bh['annual_volatility'])/results_bh['annual_volatility'] * 100
+    d4= (results_hmm['sharpe']-results_bh['sharpe'])/results_bh['sharpe'] * 100
+    d5= - (results_hmm['max_drawdown']-results_bh['max_drawdown'])/results_bh['max_drawdown'] * 100
+    compar=[d1,d2,d3,d4,d5]
+    df['Comparison']=pd.Series(compar)
+    return df

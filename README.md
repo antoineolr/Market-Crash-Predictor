@@ -41,9 +41,7 @@ Six indicateurs techniques servent d'observations au modèle :
 ### Prérequis
 * Python 3.9 ou supérieur
 
-### Installation des dépendances
-```bash
-pip install numpy pandas yfinance arch hmmlearn scikit-learn scipy matplotlib joblib
+
 
 Utilisation
 Le script principal automatise l'ensemble du pipeline :
@@ -72,3 +70,7 @@ utils/ : Fonctions de traitement de données et graphiques.
 
 Dépendances
 numpy, pandas, yfinance, arch, hmmlearn, scikit-learn, scipy, matplotlib, joblib.
+
+### Installation des dépendances
+```bash
+pip install numpy pandas yfinance arch hmmlearn scikit-learn scipy matplotlib joblib

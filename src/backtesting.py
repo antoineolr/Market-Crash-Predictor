@@ -5,21 +5,32 @@ def calculate_portfolio_value(returns, initial_capital):
     return initial_capital * np.cumprod(1 + returns)
 
 def calculate_metrics(returns, portfolio_values,risk_free_rate):
-    running_max=np.maximum.accumulate(portfolio_values)
-    drawdown=(portfolio_values - running_max)/running_max
-    max_drawdown=np.min(drawdown)
-    
-    total_return=(portfolio_values[-1] / portfolio_values[0]) - 1
-
-    annual_return=(1 + total_return) ** (252 / len(returns)) - 1
-    annual_volatility=np.std(returns)*np.sqrt(252)
-
-    if np.std(returns)==0:
-        sharpe_ratio=np.nan
+    if isinstance(portfolio_values, pd.Series):
+        portfolio_array = portfolio_values.values
     else:
-        sharpe_ratio=(annual_return - risk_free_rate)/annual_volatility
-
-    return {'total_return':total_return,'annual_return':annual_return,'annual_volatility':annual_volatility,'sharpe':sharpe_ratio,'max_drawdown':max_drawdown}
+        portfolio_array = portfolio_values
+    
+    running_max = np.maximum.accumulate(portfolio_array)
+    drawdown = (portfolio_array - running_max) / running_max
+    max_drawdown = np.min(drawdown)
+    
+    total_return = (portfolio_array[-1] / portfolio_array[0]) - 1
+    
+    annual_return = (1 + total_return) ** (252 / len(returns)) - 1
+    annual_volatility = np.std(returns) * np.sqrt(252)
+    
+    if np.std(returns) == 0:
+        sharpe_ratio = np.nan
+    else:
+        sharpe_ratio = (annual_return - risk_free_rate) / annual_volatility
+    
+    return {
+        'total_return': total_return,
+        'annual_return': annual_return,
+        'annual_volatility': annual_volatility,
+        'sharpe': sharpe_ratio,
+        'max_drawdown': max_drawdown
+    }
 
 def backtest_buy_and_hold(data, initial_capital):
     returns=data['Log_Return']
@@ -70,5 +81,5 @@ def compare_strategies(results_bh, results_hmm):
     d4= (results_hmm['sharpe']-results_bh['sharpe'])/results_bh['sharpe'] * 100
     d5= - (results_hmm['max_drawdown']-results_bh['max_drawdown'])/results_bh['max_drawdown'] * 100
     compar=[d1,d2,d3,d4,d5]
-    df['Comparison']=pd.Series(compar)
+    df['Comparison']=pd.Series(compar, index=df.index)
     return df

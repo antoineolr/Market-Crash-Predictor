@@ -25,18 +25,24 @@ test_data=data[split_date:]
 model=create_hmm_model(n_states,covariance_type,n_iter,random_state)
 model=train_hmm(train_data,model)
 
-states=predict_states(test_data,model)
+states_test=predict_states(test_data,model)
+states_train=predict_states(train_data,model)
 
 probabilities_test=predict_proba(test_data,model)
 probabilities_train=predict_proba(train_data,model)
 
 optimal_threshold=backtest_threshold(train_data,probabilities_train,thresholds,tax,initial_capital)
 
-signals=generate_signals(probabilities_test,optimal_threshold)
-signals=apply_smoothing(signals,smoothing_window)
+signals_test=generate_signals(probabilities_test,optimal_threshold)
+print(f"Test - Avant lissage - SELL: {np.sum(signals_test=='SELL')}, HOLD: {np.sum(signals_test=='HOLD')}, BUY: {np.sum(signals_test=='BUY')}")
+signals_test=apply_smoothing(signals_test,smoothing_window)
+print(f"Test - Après lissage - SELL: {np.sum(signals_test=='SELL')}, HOLD: {np.sum(signals_test=='HOLD')}, BUY: {np.sum(signals_test=='BUY')}")
+
+signals_train=generate_signals(probabilities_train,optimal_threshold)
+signals_train=apply_smoothing(signals_train,smoothing_window)
 
 metrics_bh, portfolio_bh=backtest_buy_and_hold(test_data,initial_capital)
-metrics_hmm, portfolio_hmm=backtest_hmm_strategy(test_data,signals,tax,initial_capital)
+metrics_hmm, portfolio_hmm=backtest_hmm_strategy(test_data,signals_test,tax,initial_capital)
 
 comparison=compare_strategies(metrics_bh,metrics_hmm)
 print(comparison)
@@ -47,12 +53,21 @@ dd_bh = (portfolio_bh - running_max_bh) / running_max_bh
 running_max_hmm = np.maximum.accumulate(portfolio_hmm)
 dd_hmm = (portfolio_hmm - running_max_hmm) / running_max_hmm
 
-graph_hidden_states(test_data,states)
+# Graphiques pour la période de TEST (2019-2024)
+print("\n=== Graphiques TEST (2019-2024) ===")
+graph_hidden_states(test_data,states_test)
 graph_crisis_prob(test_data,probabilities_test,optimal_threshold)
-graph_trading_signals(test_data,signals)
+graph_trading_signals(test_data,signals_test)
 graph_comparison(test_data,portfolio_bh,portfolio_hmm)
 graph_drawdown(test_data,dd_bh,dd_hmm)
 
+# Graphiques pour la période de TRAIN (2000-2018, inclut crise 2008)
+print("\n=== Graphiques TRAIN (2000-2018, inclut 2008) ===")
+graph_hidden_states(train_data,states_train)
+graph_crisis_prob(train_data,probabilities_train,optimal_threshold)
+graph_trading_signals(train_data,signals_train)
+
 print("Optimal threshold :", optimal_threshold)
-print("Nombres de transactions :", count_transactions(signals))
+print("Nombres de transactions (test):", count_transactions(signals_test))
+print("Nombres de transactions (train):", count_transactions(signals_train))
 

@@ -28,10 +28,15 @@ def generate_signals_hysteresis(probabilities, upper_threshold, lower_threshold)
     return signals
 
 def apply_smoothing(signals,window):
-    signals_df=pd.Series(signals)
-    signals_df=signals_df.rolling(window, center=True).apply(lambda x: mode(x)[0][0])
-    signals_df = signals_df.fillna(method='ffill')
-    signals=signals_df.to_numpy()
+    signal_map = {"SELL": 0, "HOLD": 1, "BUY": 2}
+    reverse_map = {0: "SELL", 1: "HOLD", 2: "BUY"}
+
+    signals_numeric = pd.Series([signal_map[s] for s in signals])
+    signals_smoothed = signals_numeric.rolling(window, center=True).apply(
+        lambda x: mode(x, keepdims=True)[0][0] if len(x) > 0 else x.iloc[0]
+    )
+    signals_smoothed = signals_smoothed.ffill().bfill()
+    signals = signals_smoothed.apply(lambda x: reverse_map[int(x)]).to_numpy()
     return signals
 
 def add_transaction_costs(signals,transaction_amounts,tax):
@@ -58,7 +63,7 @@ def count_transactions(signals):
 def backtest_threshold(data, probabilities, thresholds,tax,portfolio_init):
     market_returns=data['Log_Return']
     market_returns=market_returns.to_numpy()
-
+    
     sharpe_ratios=[]
     cumuls=[]
     n_transactions=[]
@@ -66,7 +71,6 @@ def backtest_threshold(data, probabilities, thresholds,tax,portfolio_init):
 
     for threshold in thresholds:        
         signals=generate_signals(probabilities,threshold)
-
         n_transactions.append(count_transactions(signals))
 
         strategy_returns=np.zeros(len(signals))
@@ -102,7 +106,7 @@ def backtest_threshold(data, probabilities, thresholds,tax,portfolio_init):
         drawdown=(portfolio_value - running_max)/running_max
         max_drawdown=np.min(drawdown)
         drawdowns.append(max_drawdown)
-        
+
         if np.std(strategy_returns_net)==0:
             sharpe_ratio=np.nan
         else:
@@ -112,10 +116,10 @@ def backtest_threshold(data, probabilities, thresholds,tax,portfolio_init):
         sharpe_ratios.append(sharpe_ratio)
     
     df=pd.DataFrame(index=thresholds)
-    df['Sharpe_Ratio']=pd.Series(sharpe_ratios)
-    df['Total_Returns']=pd.Series(cumuls)
-    df['N_Transaction']=pd.Series(n_transactions)
-    df['Max_Drawdown']=pd.Series(drawdowns)
+    df['Sharpe_Ratio']=pd.Series(sharpe_ratios, index=thresholds)
+    df['Total_Returns']=pd.Series(cumuls, index=thresholds)
+    df['N_Transaction']=pd.Series(n_transactions, index=thresholds)
+    df['Max_Drawdown']=pd.Series(drawdowns, index=thresholds)
 
 
     optimal_threshold=df['Sharpe_Ratio'].idxmax()

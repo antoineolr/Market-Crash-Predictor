@@ -10,6 +10,9 @@ def load_market_data(ticker, start_date, end_date):
     if data.empty:
         raise ValueError(f"Aucune donnée trouvée pour le ticker : {ticker}")
     
+    if isinstance(data.columns, pd.MultiIndex):
+        data.columns = data.columns.get_level_values(0)
+    
     return data
 
     
@@ -19,6 +22,9 @@ def load_vix_data(start_date, end_date):
     data = yf.download(tickers="^VIX",start=start_date, end=end_date, auto_adjust=False)
     if data.empty:
         raise ValueError(f"Aucune donnée trouvée")
+    
+    if isinstance(data.columns, pd.MultiIndex):
+        data.columns = data.columns.get_level_values(0)
     
     return data
 
@@ -31,7 +37,7 @@ def save_data_to_csv(data, filename):
 
 def compute_log_returns(data):
     """Calcule les log-rendements en Close-to-Close convention"""
-    data['Log_Return']=np.log(data['Close']/data.shift(1)['Close'])
+    data['Log_Return']=np.log(data['SP500_Close']/data.shift(1)['SP500_Close'])
     data.dropna(inplace=True)
     return data
 

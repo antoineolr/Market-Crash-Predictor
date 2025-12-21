@@ -22,15 +22,15 @@ random_state = 42
 startprob = [0.70, 0.25, 0.05]
 state_names = {0: "Stable", 1: "Volatile", 2: "Crise"}
 
-threshold = 0.7 ###pour P(Crise)
-upper_threshold = 0.7
-lower_threshold = 0.4
+threshold = 0.3 ###pour P(Crise)
+upper_threshold = 0.3
+lower_threshold = 0.15
 smoothing_window = 5 ###jours
-tax = 0.001 ### 0.01% / transactions
+tax = 0.001 ### 0.1% / transactions
 initial_capital = 10000 ### $ ou €
 risk_free_rate = 0.02  ### 2% annuel
 
-thresholds = np.arange(0.5, 0.95, 0.05) 
+thresholds = np.arange(0.1, 0.6, 0.05)  # Test lower thresholds: 0.1, 0.15, 0.2, ..., 0.55 
 
 output_dir = "data/"
 models_dir = "models/"

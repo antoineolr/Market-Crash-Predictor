@@ -19,12 +19,13 @@ def graph_hidden_states(data, states):
 
 def graph_crisis_prob(data, probabilities, threshold):
     plt.figure(figsize=(12, 6))
-    plt.plot(data.index,probabilities['Crise'],color='red',label='P(Crise)')
-    plt.axhline(y=threshold)
-    plt.fill_between(data.index, 0, probabilities['Crise'], 
-                     where=(probabilities['Crise'] < threshold), color='green', alpha=0.3)
-    plt.fill_between(data.index, 0, probabilities['Crise'], 
-                     where=(probabilities['Crise'] > threshold), color='red', alpha=0.3)
+    p_crisis = probabilities[:, 2]  # Extract crisis probabilities (column 2)
+    plt.plot(data.index, p_crisis, color='red', label='P(Crise)')
+    plt.axhline(y=threshold, color='black', linestyle='--', label=f'Seuil = {threshold}')
+    plt.fill_between(data.index, 0, p_crisis, 
+                     where=(p_crisis < threshold), color='green', alpha=0.3)
+    plt.fill_between(data.index, 0, p_crisis, 
+                     where=(p_crisis >= threshold), color='red', alpha=0.3)
     plt.legend()
     plt.title('Probabilité de Crise')
     plt.xlabel('Date')
@@ -37,11 +38,23 @@ def graph_trading_signals(data, signals):
     plt.figure(figsize=(12, 6))
     plt.plot(data.index, data['SP500_Close'],'k-')
 
-    buy_signals=data.index[signals == "BUY"]
+    # Détection des signaux BUY explicites
+    buy_signals_explicit=data.index[signals == "BUY"]
+    
+    # Détection des entrées sur le marché (transitions SELL → HOLD)
+    buy_signals_transitions = []
+    for i in range(1, len(signals)):
+        if signals[i] == "HOLD" and signals[i-1] == "SELL":
+            buy_signals_transitions.append(data.index[i])
+    
+    # Combiner les deux sources de signaux BUY
+    all_buy_signals = buy_signals_explicit.union(buy_signals_transitions) if len(buy_signals_explicit) > 0 else buy_signals_transitions
+    
     sell_signals=data.index[signals == "SELL"]
 
-    plt.scatter(buy_signals, data.loc[buy_signals, 'SP500_Close'], color='green', marker='^')
-    plt.scatter(sell_signals, data.loc[sell_signals, 'SP500_Close'], color='red', marker='v')
+    if len(all_buy_signals) > 0:
+        plt.scatter(all_buy_signals, data.loc[all_buy_signals, 'SP500_Close'], color='green', marker='^', label='BUY (Entrée)', s=200)
+    plt.scatter(sell_signals, data.loc[sell_signals, 'SP500_Close'], color='red', marker='v', label='SELL (Sortie)', s=100)
     plt.legend()
     plt.title('Signaux de Trading')
     plt.xlabel('Date')
